@@ -2,15 +2,15 @@
 INSERT INTO roles (name, description) VALUES
     ('admin', 'Administrator with access to app settings and users data'),
     ('warehouse_receiver', 'Receives and validates products into the warehouse'),
-    ('warehouse_packer', 'Packs packages for delivery'),
-    ('carrier', 'Delivery carrier who transports packages');
+    ('warehouse_packer', 'Packs packages for delivery and puts them on the truck'),
+    ('carrier', 'Delivery carrier who transports packages from the warehouse to the destination');
 
 -- Insert sample users
 INSERT INTO users (first_name, last_name, email, password_hash) VALUES
     ('John', 'Doe', 'admin@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Jane', 'Smith', 'carrier@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Bob', 'Johnson', 'warehouse@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Alice', 'Williams', 'customer@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2');
+    ('Jane', 'Smith', 'receiver@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
+    ('Bob', 'Johnson', 'packer@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
+    ('Alice', 'Williams', 'carrier@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2');
 
 -- Assign roles to users
 INSERT INTO user_roles (user_id, role_id) VALUES

@@ -56,7 +56,7 @@ EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     sku VARCHAR(100) UNIQUE NOT NULL, -- Stock Keeping Unit
-    warehouse_id INT,
+    warehouse_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
