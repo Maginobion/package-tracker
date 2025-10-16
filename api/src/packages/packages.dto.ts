@@ -7,8 +7,8 @@ export const getPackageSchema = z.object({
       .string()
       .min(1, "Tracking number is required")
       .regex(
-        /^PKG-[A-Z]{2}-\d{4}-\d{3}$/,
-        "Invalid tracking number format. Expected format: PKG-XX-YYYY-NNN"
+        /^(PKG-[A-Z]{2}-\d{4}-\d{3}|PKG-\d+-[A-Z0-9]+)$/,
+        "Invalid tracking number format. Expected: PKG-XX-YYYY-NNN or PKG-{timestamp}-{code}"
       ),
   }),
 });
