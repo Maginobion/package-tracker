@@ -1,27 +1,31 @@
 import type { Package } from "@common/types/packages/package.types";
+import appConfig from "../config/config";
 import pgsql from "../config/database";
 
 /**
  * Find packages that:
- * 1. Pending packages: created more than 3 days ago (never left pending)
- * 2. Ready_for_shipping: the latest return to warehouse was more than 3 days ago
+ * 1. Pending packages: created more than X days ago (never left pending)
+ * 2. Ready_for_shipping: the latest return to warehouse was more than X days ago
+ * (X = configurable threshold from STALE_PACKAGES_THRESHOLD_DAYS env var, default 3)
  */
 export const findPackagesNotInTransit = async (): Promise<Package[]> => {
+  const thresholdDays = appConfig.jobs.stalePackagesThresholdDays;
+
   const packages = await pgsql<Package[]>`
     SELECT DISTINCT p.* FROM packages p
     WHERE (
-      -- Pending packages > 3 days
+      -- Pending packages > threshold days
       (p.status = 'pending'
-       AND p.created_at < NOW() - INTERVAL '3 days')
+       AND p.created_at < NOW() - CAST(${thresholdDays} || ' days' AS INTERVAL))
       OR
-      -- Ready_for_shipping packages where the LATEST return was > 3 days ago
+      -- Ready_for_shipping packages where the LATEST return was > threshold days ago
       (p.status = 'ready_for_shipping'
        AND (
          SELECT MAX(sh.event_timestamp)
          FROM shipment_history sh
          WHERE sh.package_id = p.id
          AND sh.status = 'Returned to Warehouse'
-       ) < NOW() - INTERVAL '3 days')
+       ) < NOW() - CAST(${thresholdDays} || ' days' AS INTERVAL))
     )
     ORDER BY p.created_at ASC
   `;
@@ -63,6 +67,7 @@ export const findSameDayReturnedPackages = async (): Promise<Package[]> => {
 };
 
 export const getStalePackagesSummary = async () => {
+  const thresholdDays = appConfig.jobs.stalePackagesThresholdDays;
   const notInTransit = await findPackagesNotInTransit();
   const sameDayReturned = await findSameDayReturnedPackages();
 
@@ -70,7 +75,7 @@ export const getStalePackagesSummary = async () => {
     notInTransit: {
       count: notInTransit.length,
       packages: notInTransit,
-      description: "Not shipped or in transit for more than 3 days",
+      description: `Not shipped or in transit for more than ${thresholdDays} days`,
     },
     sameDayReturned: {
       count: sameDayReturned.length,
@@ -78,5 +83,6 @@ export const getStalePackagesSummary = async () => {
       description: "Returned same day and still not delivered",
     },
     total: notInTransit.length + sameDayReturned.length,
+    thresholdDays,
   };
 };

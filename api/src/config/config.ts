@@ -11,6 +11,9 @@ type AppConfig = {
     secret: string;
     expiresIn: string;
   };
+  jobs: {
+    stalePackagesThresholdDays: number;
+  };
 };
 
 const appConfig: AppConfig = {
@@ -26,6 +29,11 @@ const appConfig: AppConfig = {
   jwt: {
     secret: process.env.JWT_SECRET ?? "your-secret-key-change-in-production",
     expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  },
+  jobs: {
+    stalePackagesThresholdDays: Number(
+      process.env.STALE_PACKAGES_THRESHOLD_DAYS ?? 3
+    ),
   },
 };
 

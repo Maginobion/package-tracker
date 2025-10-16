@@ -15,8 +15,9 @@ export const checkStalePackagesJob = async () => {
     const summary = await getStalePackagesSummary();
 
     logger.log(`[${new Date().toISOString()}] Stale packages summary:`);
+    logger.log(`  - Threshold: ${summary.thresholdDays} days`);
     logger.log(
-      `  - Not shipped or in transit > 3 days: ${summary.notInTransit.count} packages`
+      `  - Not shipped or in transit > ${summary.thresholdDays} days: ${summary.notInTransit.count} packages`
     );
     logger.log(
       `  - Same-day returned (not delivered): ${summary.sameDayReturned.count} packages`
@@ -26,7 +27,7 @@ export const checkStalePackagesJob = async () => {
     // Log details of packages not in transit or stuck in transit
     if (summary.notInTransit.count > 0) {
       logger.log(
-        "\n📦 Packages not shipped or in transit for more than 3 days:"
+        `\n📦 Packages not shipped or in transit for more than ${summary.thresholdDays} days:`
       );
       summary.notInTransit.packages.forEach((pkg) => {
         const detail =
