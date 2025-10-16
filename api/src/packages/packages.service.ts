@@ -146,3 +146,26 @@ export const setPackageDelivered = async (
     return response;
   });
 };
+
+export const setPackageReturnedToWarehouse = async (
+  trackingNumber: string,
+  userId: number
+): Promise<Package> => {
+  return await pgsql.begin(async (sql) => {
+    const [response]: Package[] = await sql`
+      UPDATE packages SET status = 'ready_for_shipping' WHERE tracking_number = ${trackingNumber} AND status = 'in_transit'
+      RETURNING *
+    `;
+
+    if (!response) {
+      throw new Error("Package not found");
+    }
+
+    await sql`
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'Returned to Warehouse', ${response.destination_address}, 'Package returned to warehouse', NOW())
+    `;
+
+    return response;
+  });
+};

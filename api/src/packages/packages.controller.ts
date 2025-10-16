@@ -5,6 +5,7 @@ import {
   SetPackageDeliveredBody,
   SetPackageInTransitBody,
   SetPackageReadyForShippingBody,
+  SetPackageReturnedToWarehouseBody,
 } from "./packages.dto";
 import {
   createPackage,
@@ -12,6 +13,7 @@ import {
   setPackageDelivered,
   setPackageInTransit,
   setPackageReadyForShipping,
+  setPackageReturnedToWarehouse,
 } from "./packages.service";
 
 export const getPackage = async (
@@ -104,6 +106,26 @@ export const postSetPackageDelivered = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
     const packageEntity = await setPackageDelivered(
+      trackingNumber,
+      req.user.userId
+    );
+    res.status(200).json(packageEntity);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const postSetPackageReturnedToWarehouse = async (
+  req: Request<object, object, SetPackageReturnedToWarehouseBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { trackingNumber } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const packageEntity = await setPackageReturnedToWarehouse(
       trackingNumber,
       req.user.userId
     );
