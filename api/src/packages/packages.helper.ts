@@ -1,5 +1,3 @@
-const generateTrackingNumber = () => {
-  return `PKG-${Math.random().toString(36).substring(2, 15)}-${Math.random().toString(36).substring(2, 15)}-${Math.random().toString(36).substring(2, 15)}`;
+export const generateTrackingNumber = (): string => {
+  return `PKG-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 };
-
-export { generateTrackingNumber };
