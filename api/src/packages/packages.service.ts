@@ -15,7 +15,112 @@ import {
 // Default repository instance
 const defaultRepository = new PackagesRepository();
 
-export const getPackageByTrackingNumber = async (
+export interface PaginatedPackagesResult {
+  packages: PackageOverview[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export const getPackagesPaginated = async (
+  cursor?: string,
+  limit = 20,
+  startDate?: string,
+  endDate?: string,
+  status?: string,
+  hasReturnedToWarehouse?: boolean
+): Promise<PaginatedPackagesResult> => {
+  const conditions: string[] = [];
+
+  if (cursor) {
+    conditions.push(`p.id > ${parseInt(cursor, 10)}`);
+  }
+
+  if (startDate) {
+    conditions.push(`p.created_at >= '${startDate}'`);
+  }
+  if (endDate) {
+    conditions.push(`p.created_at <= '${endDate}'`);
+  }
+
+  if (status) {
+    conditions.push(`p.status = '${status}'`);
+  }
+
+  // Returned to warehouse filter
+  if (hasReturnedToWarehouse !== undefined) {
+    const parsedHasReturnedToWarehouse =
+      (hasReturnedToWarehouse as unknown as string) === "true" ? true : false;
+    if (parsedHasReturnedToWarehouse) {
+      conditions.push(`
+        EXISTS (
+          SELECT 1 FROM shipment_history sh 
+          WHERE sh.package_id = p.id 
+          AND sh.status = 'Returned to Warehouse'
+        )
+      `);
+    } else {
+      conditions.push(`
+        NOT EXISTS (
+          SELECT 1 FROM shipment_history sh 
+          WHERE sh.package_id = p.id 
+          AND sh.status = 'Returned to Warehouse'
+        )
+      `);
+    }
+  }
+
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  console.log("whereClause", whereClause);
+
+  // Fetch limit + 1 to check if there are more results
+  const packages = await pgsql<PackageOverview[]>`
+    SELECT 
+      p.*,
+      CONCAT(u.first_name, ' ', u.last_name) as user_full_name,
+      u.email as user_email,
+      COALESCE(
+        json_agg(
+          CASE 
+            WHEN pr.id IS NOT NULL THEN
+              json_build_object(
+                'product_id', pr.id,
+                'product_name', pr.name,
+                'quantity', pp.quantity,
+                'sku', pr.sku
+              )
+            ELSE NULL
+          END
+        ) FILTER (WHERE pr.id IS NOT NULL),
+        '[]'
+      ) as products
+    FROM packages p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN package_products pp ON p.id = pp.package_id
+    LEFT JOIN products pr ON pp.product_id = pr.id
+    ${pgsql.unsafe(whereClause)}
+    GROUP BY p.id, u.first_name, u.last_name, u.email
+    ORDER BY p.id ASC
+    LIMIT ${limit + 1}
+  `;
+
+  // Check if there are more results
+  const hasMore = packages.length > limit;
+  const resultPackages = hasMore ? packages.slice(0, limit) : packages;
+  const nextCursor =
+    hasMore && resultPackages.length > 0
+      ? String(resultPackages[resultPackages.length - 1].id)
+      : null;
+
+  return {
+    packages: resultPackages,
+    nextCursor,
+    hasMore,
+  };
+};
+
+export const getPackageDetailsByTrackingNumber = async (
   trackingNumber: string
 ): Promise<PackageWithDetails | undefined> => {
   // Get package with user and product information

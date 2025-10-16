@@ -49,6 +49,29 @@ export const setPackageReturnedToWarehouseSchema = z.object({
   }),
 });
 
+// GET /api/packages (paginated)
+export const getPackagesPaginatedSchema = z.object({
+  query: z.object({
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+
+    startDate: z.iso.datetime().optional(),
+    endDate: z.iso.datetime().optional(),
+
+    status: z
+      .enum(["pending", "ready_for_shipping", "in_transit", "delivered"])
+      .optional(),
+
+    // Returned to warehouse filter
+    hasReturnedToWarehouse: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((val) =>
+        val === "true" ? true : val === "false" ? false : undefined
+      ),
+  }),
+});
+
 export type GetPackageParams = z.infer<typeof getPackageSchema>["params"];
 export type CreatePackageBody = z.infer<typeof createPackageSchema>["body"];
 export type SetPackageReadyForShippingBody = z.infer<
@@ -63,3 +86,6 @@ export type SetPackageDeliveredBody = z.infer<
 export type SetPackageReturnedToWarehouseBody = z.infer<
   typeof setPackageReturnedToWarehouseSchema
 >["body"];
+export type GetPackagesPaginatedQuery = z.infer<
+  typeof getPackagesPaginatedSchema
+>["query"];

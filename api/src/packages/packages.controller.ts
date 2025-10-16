@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   CreatePackageBody,
   GetPackageParams,
+  GetPackagesPaginatedQuery,
   SetPackageDeliveredBody,
   SetPackageInTransitBody,
   SetPackageReadyForShippingBody,
@@ -9,21 +10,52 @@ import {
 } from "./packages.dto";
 import {
   createPackage,
-  getPackageByTrackingNumber,
+  getPackageDetailsByTrackingNumber,
+  getPackagesPaginated,
   setPackageDelivered,
   setPackageInTransit,
   setPackageReadyForShipping,
   setPackageReturnedToWarehouse,
 } from "./packages.service";
 
-export const getPackage = async (
+export const getPackagesPaginatedController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      cursor,
+      limit,
+      startDate,
+      endDate,
+      status,
+      hasReturnedToWarehouse,
+    } = req.query as unknown as GetPackagesPaginatedQuery;
+
+    const result = await getPackagesPaginated(
+      cursor,
+      limit,
+      startDate,
+      endDate,
+      status,
+      hasReturnedToWarehouse
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPackageByTrackingNumber = async (
   req: Request<GetPackageParams>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { trackingNumber } = req.params;
-    const packageData = await getPackageByTrackingNumber(trackingNumber);
+    const packageData = await getPackageDetailsByTrackingNumber(trackingNumber);
     if (!packageData) {
       return res.status(404).json({ message: "Package not found" });
     }

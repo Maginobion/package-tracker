@@ -3,7 +3,8 @@ import { authenticate } from "../middlewares/authMiddleware";
 import { requireRole } from "../middlewares/roleMiddleware";
 import { validateRequest } from "../middlewares/validateRequest";
 import {
-  getPackage,
+  getPackageByTrackingNumber,
+  getPackagesPaginatedController,
   postCreatePackage,
   postSetPackageDelivered,
   postSetPackageInTransit,
@@ -13,6 +14,7 @@ import {
 import {
   createPackageSchema,
   getPackageSchema,
+  getPackagesPaginatedSchema,
   setPackageDeliveredSchema,
   setPackageInTransitSchema,
   setPackageReadyForShippingSchema,
@@ -21,7 +23,18 @@ import {
 
 const router = Router();
 
-router.get("/:trackingNumber", validateRequest(getPackageSchema), getPackage);
+// Paginated list endpoint
+router.get(
+  "/",
+  validateRequest(getPackagesPaginatedSchema),
+  getPackagesPaginatedController
+);
+
+router.get(
+  "/:trackingNumber",
+  validateRequest(getPackageSchema),
+  getPackageByTrackingNumber
+);
 
 router.post(
   "/create",
