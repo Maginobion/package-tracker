@@ -95,9 +95,11 @@ CREATE TABLE package_products (
 CREATE TABLE shipment_history (
     id SERIAL PRIMARY KEY,
     package_id INT NOT NULL,
+    user_id INT, -- User who created this history entry
     status VARCHAR(100) NOT NULL, -- e.g., 'Label Created', 'Scanned at Facility', 'Out for Delivery'
     location VARCHAR(255), -- e.g., 'Lima Distribution Center'
     notes TEXT,
     event_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
+    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );

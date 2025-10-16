@@ -54,28 +54,29 @@ INSERT INTO package_products (package_id, product_id, quantity) VALUES
 
 -- Add shipment history for tracking (all events within same day)
 -- Package 1 history (delivered - full cycle within 10 hours)
-INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) VALUES
-    (1, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '20 hours'),
-    (1, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '19 hours'),
-    (1, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '18 hours'),
-    (1, 'In Transit', 'Distribution Center, Santiago', 'Package in transit', NOW() - INTERVAL '14 hours'),
-    (1, 'Delivered', 'Av. Libertador 1500, Santiago', 'Successfully delivered to recipient', NOW() - INTERVAL '10 hours');
+-- User 2 (receiver) creates, User 3 (packer) packs, User 4 (carrier) delivers
+INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) VALUES
+    (1, 2, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '20 hours'),
+    (1, 3, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '19 hours'),
+    (1, 4, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '18 hours'),
+    (1, 4, 'In Transit', 'Distribution Center, Santiago', 'Package in transit', NOW() - INTERVAL '14 hours'),
+    (1, 4, 'Delivered', 'Av. Libertador 1500, Santiago', 'Successfully delivered to recipient', NOW() - INTERVAL '10 hours');
 
 -- Package 2 history (in transit - currently in transit to Valparaíso)
-INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) VALUES
-    (2, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '8 hours'),
-    (2, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '7 hours'),
-    (2, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '6 hours'),
-    (2, 'In Transit', 'Distribution Center, Santiago', 'Package in transit to Valparaíso', NOW() - INTERVAL '3 hours');
+INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) VALUES
+    (2, 2, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '8 hours'),
+    (2, 3, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '7 hours'),
+    (2, 4, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '6 hours'),
+    (2, 4, 'In Transit', 'Distribution Center, Santiago', 'Package in transit to Valparaíso', NOW() - INTERVAL '3 hours');
 
 -- Package 3 history (ready for shipping)
-INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) VALUES
-    (3, 'Label Created', 'Argentina Warehouse, Buenos Aires', 'Package created and label printed', NOW() - INTERVAL '5 hours'),
-    (3, 'Package Ready', 'Argentina Warehouse, Buenos Aires', 'Package packed and ready for pickup', NOW() - INTERVAL '3 hours');
+INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) VALUES
+    (3, 2, 'Label Created', 'Argentina Warehouse, Buenos Aires', 'Package created and label printed', NOW() - INTERVAL '5 hours'),
+    (3, 3, 'Package Ready', 'Argentina Warehouse, Buenos Aires', 'Package packed and ready for pickup', NOW() - INTERVAL '3 hours');
 
 -- Package 5 history (in transit - currently heading to Concepción)
-INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) VALUES
-    (5, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '7 hours'),
-    (5, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '6 hours'),
-    (5, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '4 hours 30 minutes'),
-    (5, 'In Transit', 'Distribution Center, Santiago', 'Package in transit to Concepción', NOW() - INTERVAL '2 hours');
+INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) VALUES
+    (5, 2, 'Label Created', 'Chile Warehouse, Santiago', 'Package created and label printed', NOW() - INTERVAL '7 hours'),
+    (5, 3, 'Package Ready', 'Chile Warehouse, Santiago', 'Package packed and ready for pickup', NOW() - INTERVAL '6 hours'),
+    (5, 4, 'Picked Up', 'Chile Warehouse, Santiago', 'Picked up by carrier', NOW() - INTERVAL '4 hours 30 minutes'),
+    (5, 4, 'In Transit', 'Distribution Center, Santiago', 'Package in transit to Concepción', NOW() - INTERVAL '2 hours');
