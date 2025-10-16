@@ -19,6 +19,12 @@ export default tseslint.config(
     },
     rules: {
       "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+      }],
     },
   },
 );
