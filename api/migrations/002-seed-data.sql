@@ -6,11 +6,12 @@ INSERT INTO roles (name, description) VALUES
     ('carrier', 'Delivery carrier who transports packages from the warehouse to the destination');
 
 -- Insert sample users
+-- Password for all users: "password123" (hashed with bcrypt, cost factor 10)
 INSERT INTO users (first_name, last_name, email, password_hash) VALUES
-    ('John', 'Doe', 'admin@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Jane', 'Smith', 'receiver@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Bob', 'Johnson', 'packer@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2'),
-    ('Alice', 'Williams', 'carrier@example.com', '$2b$10$rKvVJnN3Y8bH7jXqH5hQX.zJjQJXc0J5nW5h7Wz8Z9x7Y6Z5W4X3Y2');
+    ('John', 'Doe', 'admin@example.com', '$2b$10$n4TnsLmLPe09If8loaQ4ZOZ7sxZyf0X3oISc9Zl.k4.hWZvGN7bhO'),
+    ('Jane', 'Smith', 'receiver@example.com', '$2b$10$n4TnsLmLPe09If8loaQ4ZOZ7sxZyf0X3oISc9Zl.k4.hWZvGN7bhO'),
+    ('Bob', 'Johnson', 'packer@example.com', '$2b$10$n4TnsLmLPe09If8loaQ4ZOZ7sxZyf0X3oISc9Zl.k4.hWZvGN7bhO'),
+    ('Alice', 'Williams', 'carrier@example.com', '$2b$10$n4TnsLmLPe09If8loaQ4ZOZ7sxZyf0X3oISc9Zl.k4.hWZvGN7bhO');
 
 -- Assign roles to users
 INSERT INTO user_roles (user_id, role_id) VALUES

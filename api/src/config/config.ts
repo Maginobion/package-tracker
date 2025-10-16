@@ -7,6 +7,10 @@ type AppConfig = {
   port: number;
   nodeEnv: string;
   database: Options<never>;
+  jwt: {
+    secret: string;
+    expiresIn: string;
+  };
 };
 
 const appConfig: AppConfig = {
@@ -18,6 +22,10 @@ const appConfig: AppConfig = {
     database: process.env.DATABASE_NAME ?? "package_tracker",
     user: process.env.DATABASE_USER ?? "postgres",
     password: process.env.DATABASE_PASSWORD ?? "postgres",
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET ?? "your-secret-key-change-in-production",
+    expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   },
 };
 
