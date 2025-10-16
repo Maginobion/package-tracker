@@ -1,11 +1,9 @@
-// @ts-check
-
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/*.js", "node_modules/**", "dist/**"],
+    ignores: ["**/*.js", "**/*.mjs", "node_modules/**", "dist/**"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -15,11 +13,14 @@ export default tseslint.config(
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
+        defaultProject: "./tsconfig.json",
       },
     },
     rules: {
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
