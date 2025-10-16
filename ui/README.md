@@ -1,75 +1,201 @@
-# React + TypeScript + Vite
+# Package Tracker UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend web application built with React, TypeScript, and Vite for tracking package shipments.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🔍 Real-time package tracking by tracking number
+- 📊 Package status visualization
+- 📦 Detailed package information display
+- 🎨 Modern UI with Tailwind CSS
+- ⚡ Fast development with Vite HMR (Hot Module Replacement)
+- 🔄 React 19 with React Compiler
+- 📱 Responsive design
+- 🌐 RESTful API integration with Axios
 
-## React Compiler
+## 🔧 Prerequisites
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+- **Node.js** >= 18.x
+- **pnpm** >= 8.x (or npm/yarn)
+- **Package Tracker API** running (see [api/README.md](../api/README.md))
 
-Note: This will impact Vite dev & build performances.
+## 📥 Installation
 
-## Expanding the ESLint configuration
+### 1. Navigate to the UI directory
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd package-tracker/ui
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Install dependencies
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
 ```
+
+## ⚙️ Environment Configuration
+
+### 1. Create .env file (Optional)
+
+Create a `.env` file in the UI directory if you need to override defaults:
+
+```bash
+touch .env
+```
+
+### 2. Configure environment variables (if needed)
+
+```env
+# API Base URL (optional - defaults to http://localhost:3000)
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+### Environment Variables
+
+| Variable            | Description     | Default                 |
+| ------------------- | --------------- | ----------------------- |
+| `VITE_API_BASE_URL` | Backend API URL | `http://localhost:3000` |
+
+**Note:** Vite requires environment variables to be prefixed with `VITE_` to be exposed to the client.
+
+## 🚀 Running the Application
+
+### Development Mode
+
+```bash
+pnpm dev
+```
+
+This will:
+
+- Start the Vite development server
+- Enable Hot Module Replacement (HMR)
+- Run on `http://localhost:5173` by default
+
+### Preview Production Build
+
+```bash
+# Build first
+pnpm build
+
+# Preview the build
+pnpm preview
+```
+
+### Access the Application
+
+Once running, the UI will be available at:
+
+```
+http://localhost:5173
+```
+
+**Important:** Make sure the API is running on `http://localhost:3000` before using the UI.
+
+## 📜 Available Scripts
+
+| Command        | Description                              |
+| -------------- | ---------------------------------------- |
+| `pnpm dev`     | Start development server with HMR        |
+| `pnpm build`   | Build for production (TypeScript + Vite) |
+| `pnpm preview` | Preview production build locally         |
+| `pnpm lint`    | Run ESLint                               |
+
+## 🏗️ Building for Production
+
+### Build the application
+
+```bash
+pnpm build
+```
+
+This will:
+
+1. Run TypeScript compiler (`tsc -b`)
+2. Build optimized production bundle with Vite
+3. Output to `dist/` directory
+
+### Output Directory
+
+```
+dist/
+├── assets/          # CSS, JS, and other assets
+├── index.html       # Entry HTML file
+└── ...
+```
+
+### Environment Variables for Production
+
+Set `VITE_API_BASE_URL` to your production API URL:
+
+```bash
+# Build with production API
+VITE_API_BASE_URL=https://api.yourcompany.com pnpm build
+```
+
+Or use a `.env.production` file:
+
+```env
+VITE_API_BASE_URL=https://api.yourcompany.com
+```
+
+## 📁 Project Structure
+
+```
+ui/
+├── public/                 # Static assets
+│   └── vite.svg
+├── src/
+│   ├── components/        # React components
+│   │   └── PackageSearch/
+│   │       └── PackageDetails.tsx
+│   ├── config/           # Configuration files
+│   │   └── axios.ts      # Axios instance configuration
+│   ├── pages/            # Page components
+│   │   └── index.tsx     # Home page
+│   ├── services/         # API service layer
+│   │   ├── index.ts
+│   │   └── packageService.ts
+│   ├── App.css           # App-specific styles
+│   ├── App.tsx           # Root App component
+│   ├── index.css         # Global styles (Tailwind)
+│   └── main.tsx          # Application entry point
+├── .env                  # Environment variables (create if needed)
+├── .env.example          # Example environment variables
+├── eslint.config.js      # ESLint configuration
+├── index.html            # HTML template
+├── package.json
+├── tsconfig.app.json     # TypeScript config for app
+├── tsconfig.json         # Base TypeScript config
+├── tsconfig.node.json    # TypeScript config for Node
+├── vite.config.ts        # Vite configuration
+└── README.md
+```
+
+## 🛠️ Tech Stack
+
+### Core
+
+- **React 19** - UI library with latest features
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+
+### Styling
+
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **@tailwindcss/vite** - Vite plugin for Tailwind
+
+### HTTP Client
+
+- **Axios** - Promise-based HTTP client
+
+### Development Tools
+
+- **ESLint** - Code linting
+- **React Compiler** - Automatic React optimizations
+- **TypeScript ESLint** - TypeScript-specific linting rules
+
+### Build Tools
+
+- **Vite** - Fast HMR and optimized builds
+- **SWC** - Fast TypeScript/JavaScript transpilation
