@@ -1,10 +1,13 @@
+import type { Package } from "@common/types/packages/package.types";
+import axiosClient from "../config/axios";
+
 export const getPackage = async (
   trackingNumber: string,
   signal: AbortSignal
 ) => {
-  const response = await fetch(
-    `http://localhost:3000/packages/${trackingNumber}`,
+  const response = await axiosClient.get<Package>(
+    `/packages/${trackingNumber}`,
     { signal }
   );
-  return response.json();
+  return response.data;
 };
