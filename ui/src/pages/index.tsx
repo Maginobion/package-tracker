@@ -1,4 +1,4 @@
-import type { Package } from "@common/types/packages/package.types";
+import type { PackageWithDetails } from "@common/types/packages/package.types";
 import { isAxiosError } from "axios";
 import { useState } from "react";
 import PackageDetails from "../components/PackageSearch/PackageDetails";
@@ -15,10 +15,18 @@ const IndexPage = () => {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
-  const [data, setData] = useState<Package | null>(null);
+  const [data, setData] = useState<PackageWithDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (search.trim() === "") {
+      setError("Please enter a tracking number.");
+      return;
+    }
+
+    setIsLoading(true);
 
     if (abortController) {
       abortController.abort();
@@ -33,8 +41,16 @@ const IndexPage = () => {
         setError(null);
       })
       .catch((error) => {
+        console.log(error);
         if (isAxiosError(error)) {
-          setError(error.response?.data.message);
+          if (error.response?.data?.message === "Validation error") {
+            setError("Invalid tracking number. Please try again.");
+          } else {
+            setError(
+              error.response?.data.message ??
+                "An unknown error occurred. Please try again."
+            );
+          }
         } else {
           setError("An unknown error occurred. Please try again.");
         }
@@ -43,6 +59,7 @@ const IndexPage = () => {
       })
       .finally(() => {
         setAbortController(null);
+        setIsLoading(false);
       });
   };
 
@@ -59,6 +76,7 @@ const IndexPage = () => {
           />
           <p className="text-red-500">{error}</p>
           <button
+            disabled={isLoading}
             type="submit"
             className="bg-blue-500 text-white rounded-md p-2"
           >

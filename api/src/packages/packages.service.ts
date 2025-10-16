@@ -1,4 +1,9 @@
-import type { Package } from "@common/types/packages/package.types";
+import type {
+  Package,
+  PackageOverview,
+  PackageWithDetails,
+  ShipmentHistory,
+} from "@common/types/packages/package.types";
 import type { Sql } from "postgres";
 import pgsql from "../config/database";
 import { generateTrackingNumber } from "./packages.helper";
@@ -10,11 +15,55 @@ import {
 // Default repository instance
 const defaultRepository = new PackagesRepository();
 
-export const getPackageByTrackingNumber = async (trackingNumber: string) => {
-  const [response]: Package[] = await pgsql`
-    SELECT * FROM packages WHERE tracking_number = ${trackingNumber}
+export const getPackageByTrackingNumber = async (
+  trackingNumber: string
+): Promise<PackageWithDetails | undefined> => {
+  // Get package with user and product information
+  const [packageData] = await pgsql<PackageOverview[]>`
+    SELECT 
+      p.*,
+      CONCAT(u.first_name, ' ', u.last_name) as user_full_name,
+      u.email as user_email,
+      json_agg(
+        json_build_object(
+          'product_id', pr.id,
+          'product_name', pr.name,
+          'quantity', pp.quantity,
+          'sku', pr.sku
+        )
+      ) as products
+    FROM packages p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN package_products pp ON p.id = pp.package_id
+    LEFT JOIN products pr ON pp.product_id = pr.id
+    WHERE p.tracking_number = ${trackingNumber}
+    GROUP BY p.id, u.first_name, u.last_name, u.email
   `;
-  return response as Package | undefined;
+
+  if (!packageData) {
+    return undefined;
+  }
+
+  // Get shipment history ordered by timestamp
+  const shipmentHistory = await pgsql<ShipmentHistory[]>`
+    SELECT 
+      sh.id,
+      sh.status,
+      sh.location,
+      sh.notes,
+      sh.event_timestamp,
+      CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
+      u.email as created_by_email
+    FROM shipment_history sh
+    LEFT JOIN users u ON sh.user_id = u.id
+    WHERE sh.package_id = ${packageData.id}
+    ORDER BY sh.event_timestamp DESC
+  `;
+
+  return {
+    ...packageData,
+    shipment_history: shipmentHistory,
+  } as PackageWithDetails;
 };
 
 /**
