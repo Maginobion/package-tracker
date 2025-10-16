@@ -43,6 +43,12 @@ export const setPackageDeliveredSchema = z.object({
   }),
 });
 
+export const setPackageReturnedToWarehouseSchema = z.object({
+  body: z.object({
+    trackingNumber: z.string().min(1, "Tracking number is required"),
+  }),
+});
+
 export type GetPackageParams = z.infer<typeof getPackageSchema>["params"];
 export type CreatePackageBody = z.infer<typeof createPackageSchema>["body"];
 export type SetPackageReadyForShippingBody = z.infer<
@@ -53,4 +59,7 @@ export type SetPackageInTransitBody = z.infer<
 >["body"];
 export type SetPackageDeliveredBody = z.infer<
   typeof setPackageDeliveredSchema
+>["body"];
+export type SetPackageReturnedToWarehouseBody = z.infer<
+  typeof setPackageReturnedToWarehouseSchema
 >["body"];

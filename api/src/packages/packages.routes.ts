@@ -8,6 +8,7 @@ import {
   postSetPackageDelivered,
   postSetPackageInTransit,
   postSetPackageReadyForShipping,
+  postSetPackageReturnedToWarehouse,
 } from "./packages.controller";
 import {
   createPackageSchema,
@@ -15,6 +16,7 @@ import {
   setPackageDeliveredSchema,
   setPackageInTransitSchema,
   setPackageReadyForShippingSchema,
+  setPackageReturnedToWarehouseSchema,
 } from "./packages.dto";
 
 const router = Router();
@@ -48,6 +50,13 @@ router.post(
   authenticate,
   requireRole(["carrier"]),
   postSetPackageDelivered
+);
+router.post(
+  "/returned-to-warehouse",
+  validateRequest(setPackageReturnedToWarehouseSchema),
+  authenticate,
+  requireRole(["carrier"]),
+  postSetPackageReturnedToWarehouse
 );
 
 export default router;
