@@ -27,29 +27,19 @@ export const createPackageSchema = z.object({
 
 export const setPackageReadyForShippingSchema = z.object({
   body: z.object({
-    packageId: z
-      .number()
-      .int()
-      .positive("Package ID must be a positive integer"),
+    trackingNumber: z.string().min(1, "Tracking number is required"),
   }),
 });
 
 export const setPackageInTransitSchema = z.object({
   body: z.object({
-    packageId: z
-      .number()
-      .int()
-      .positive("Package ID must be a positive integer"),
-    location: z.string().min(1, "Location is required"),
+    trackingNumber: z.string().min(1, "Tracking number is required"),
   }),
 });
 
 export const setPackageDeliveredSchema = z.object({
   body: z.object({
-    packageId: z
-      .number()
-      .int()
-      .positive("Package ID must be a positive integer"),
+    trackingNumber: z.string().min(1, "Tracking number is required"),
   }),
 });
 

@@ -59,8 +59,14 @@ export const postSetPackageReadyForShipping = async (
   next: NextFunction
 ) => {
   try {
-    const { packageId } = req.body;
-    const packageEntity = await setPackageReadyForShipping(packageId);
+    const { trackingNumber } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const packageEntity = await setPackageReadyForShipping(
+      trackingNumber,
+      req.user.userId
+    );
     res.status(200).json(packageEntity);
   } catch (error) {
     next(error);
@@ -73,8 +79,14 @@ export const postSetPackageInTransit = async (
   next: NextFunction
 ) => {
   try {
-    const { packageId, location } = req.body;
-    const packageEntity = await setPackageInTransit(packageId, location);
+    const { trackingNumber } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const packageEntity = await setPackageInTransit(
+      trackingNumber,
+      req.user.userId
+    );
     res.status(200).json(packageEntity);
   } catch (error) {
     next(error);
@@ -87,8 +99,14 @@ export const postSetPackageDelivered = async (
   next: NextFunction
 ) => {
   try {
-    const { packageId } = req.body;
-    const packageEntity = await setPackageDelivered(packageId);
+    const { trackingNumber } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const packageEntity = await setPackageDelivered(
+      trackingNumber,
+      req.user.userId
+    );
     res.status(200).json(packageEntity);
   } catch (error) {
     next(error);

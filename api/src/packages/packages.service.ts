@@ -66,8 +66,8 @@ export const createPackage = async (
 
     // Create shipment history
     await sql`
-      INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, 'Label Created', ${destinationAddress}, ${notes ?? ""}, NOW())
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'Label Created', ${destinationAddress}, ${notes ?? "Package created and label printed"}, NOW())
     `;
 
     return response;
@@ -75,11 +75,12 @@ export const createPackage = async (
 };
 
 export const setPackageReadyForShipping = async (
-  packageId: number
+  trackingNumber: string,
+  userId: number
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
     const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'ready_for_shipping' WHERE id = ${packageId}
+      UPDATE packages SET status = 'ready_for_shipping' WHERE tracking_number = ${trackingNumber} AND status = 'pending'
       RETURNING *
     `;
 
@@ -88,8 +89,8 @@ export const setPackageReadyForShipping = async (
     }
 
     await sql`
-      INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, 'Package Ready', ${response.destination_address}, 'Package packed and ready for pickup', NOW())
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'Package Ready', ${response.destination_address}, 'Package packed and ready for pickup', NOW())
     `;
 
     return response;
@@ -97,12 +98,12 @@ export const setPackageReadyForShipping = async (
 };
 
 export const setPackageInTransit = async (
-  packageId: number,
-  location: string
+  trackingNumber: string,
+  userId: number
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
     const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'in_transit', shipped_at = NOW() WHERE id = ${packageId}
+      UPDATE packages SET status = 'in_transit', shipped_at = NOW() WHERE tracking_number = ${trackingNumber} AND status = 'ready_for_shipping'
       RETURNING *
     `;
 
@@ -111,8 +112,12 @@ export const setPackageInTransit = async (
     }
 
     await sql`
-      INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, 'In Transit', ${location}, 'Package is in transit', NOW())
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'Picked Up', ${response.destination_address}, 'Picked up by carrier', NOW())
+    `;
+    await sql`
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'In Transit', ${response.destination_address}, 'Package is in transit', NOW())
     `;
 
     return response;
@@ -120,11 +125,12 @@ export const setPackageInTransit = async (
 };
 
 export const setPackageDelivered = async (
-  packageId: number
+  trackingNumber: string,
+  userId: number
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
     const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'delivered', delivered_at = NOW() WHERE id = ${packageId}
+      UPDATE packages SET status = 'delivered', delivered_at = NOW() WHERE tracking_number = ${trackingNumber} AND status = 'in_transit'
       RETURNING *
     `;
 
@@ -133,8 +139,8 @@ export const setPackageDelivered = async (
     }
 
     await sql`
-      INSERT INTO shipment_history (package_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, 'Delivered', ${response.destination_address}, 'Successfully delivered to recipient', NOW())
+      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
+      VALUES (${response.id}, ${userId}, 'Delivered', ${response.destination_address}, 'Successfully delivered to recipient', NOW())
     `;
 
     return response;
