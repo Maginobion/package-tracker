@@ -1,8 +1,14 @@
 import type { Package } from "@common/types/packages/package.types";
-import type Product from "@common/types/products/product.types";
 import type { Sql } from "postgres";
 import pgsql from "../config/database";
 import { generateTrackingNumber } from "./packages.helper";
+import {
+  PackagesRepository,
+  type IPackagesRepository,
+} from "./packages.repository";
+
+// Default repository instance
+const defaultRepository = new PackagesRepository();
 
 export const getPackageByTrackingNumber = async (trackingNumber: string) => {
   const [response]: Package[] = await pgsql`
@@ -13,159 +19,222 @@ export const getPackageByTrackingNumber = async (trackingNumber: string) => {
 
 /**
  * Validates if a product is available for packaging
- * Locks the product row to prevent race conditions
+ * @param repository - Repository instance (injected for testing)
  * @param sql - Transaction context
  * @param productId - ID of the product to check
  * @throws Error if product is not available
  */
 const validateProductAvailability = async (
+  repository: IPackagesRepository,
   sql: Sql,
   productId: number
-): Promise<Product> => {
-  const [product]: Product[] = await sql`
-    SELECT * FROM products 
-    WHERE id = ${productId} 
-    AND NOT EXISTS (
-      SELECT 1 FROM package_products WHERE product_id = ${productId}
-    )
-    FOR UPDATE  -- Lock the product row to prevent concurrent access
-  `;
-
-  if (!product) {
+): Promise<void> => {
+  const { available } = await repository.findAvailableProduct(sql, productId);
+  if (!available) {
     throw new Error("Product is not available");
   }
-
-  return product;
 };
 
 export const createPackage = async (
   productId: number,
   destinationAddress: string,
   userId: number,
-  notes?: string
+  notes?: string,
+  repository: IPackagesRepository = defaultRepository
 ): Promise<Package> => {
-  // Use a transaction to ensure atomicity and prevent race conditions
   return await pgsql.begin(async (sql) => {
-    // Validate product availability within the transaction
-    await validateProductAvailability(sql, productId);
+    await validateProductAvailability(repository, sql, productId);
 
     const trackingNumber = generateTrackingNumber();
+    const newPackage = await repository.createPackage(
+      sql,
+      trackingNumber,
+      userId,
+      destinationAddress
+    );
 
-    // Insert package
-    const [response]: Package[] = await sql`
-      INSERT INTO packages (tracking_number, user_id, destination_address, status, shipped_at, delivered_at) 
-      VALUES (${trackingNumber}, ${userId}, ${destinationAddress}, 'pending', NULL, NULL)
-      RETURNING *
-    `;
+    await repository.addPackageProduct(sql, newPackage.id, productId, 1);
+    await repository.addShipmentHistory(
+      sql,
+      newPackage.id,
+      userId,
+      "Label Created",
+      destinationAddress,
+      notes ?? "Package created and label printed"
+    );
 
-    // Link product to package
-    await sql`
-      INSERT INTO package_products (package_id, product_id, quantity) 
-      VALUES (${response.id}, ${productId}, 1)
-    `;
-
-    // Create shipment history
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'Label Created', ${destinationAddress}, ${notes ?? "Package created and label printed"}, NOW())
-    `;
-
-    return response;
+    return newPackage;
   });
 };
 
 export const setPackageReadyForShipping = async (
   trackingNumber: string,
-  userId: number
+  userId: number,
+  repository: IPackagesRepository = defaultRepository
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
-    const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'ready_for_shipping' WHERE tracking_number = ${trackingNumber} AND status = 'pending'
-      RETURNING *
+    // Find package first
+    const [pkg]: Package[] = await sql`
+      SELECT * FROM packages WHERE tracking_number = ${trackingNumber} FOR UPDATE
     `;
 
-    if (!response) {
+    if (!pkg) {
       throw new Error("Package not found");
     }
 
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'Package Ready', ${response.destination_address}, 'Package packed and ready for pickup', NOW())
-    `;
+    const updatedPackage = await repository.updatePackageStatus(
+      sql,
+      pkg.id,
+      "pending",
+      "ready_for_shipping"
+    );
 
-    return response;
+    if (!updatedPackage) {
+      throw new Error(
+        "Package cannot be marked as ready - it must be in pending status"
+      );
+    }
+
+    await repository.addShipmentHistory(
+      sql,
+      updatedPackage.id,
+      userId,
+      "Package Ready",
+      updatedPackage.destination_address,
+      "Package packed and ready for pickup"
+    );
+
+    return updatedPackage;
   });
 };
 
 export const setPackageInTransit = async (
   trackingNumber: string,
-  userId: number
+  userId: number,
+  repository: IPackagesRepository = defaultRepository
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
-    const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'in_transit', shipped_at = NOW() WHERE tracking_number = ${trackingNumber} AND status = 'ready_for_shipping'
-      RETURNING *
+    const [pkg]: Package[] = await sql`
+      SELECT * FROM packages WHERE tracking_number = ${trackingNumber} FOR UPDATE
     `;
 
-    if (!response) {
+    if (!pkg) {
       throw new Error("Package not found");
     }
 
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'Picked Up', ${response.destination_address}, 'Picked up by carrier', NOW())
-    `;
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'In Transit', ${response.destination_address}, 'Package is in transit', NOW())
-    `;
+    const updatedPackage = await repository.updatePackageStatus(
+      sql,
+      pkg.id,
+      "ready_for_shipping",
+      "in_transit",
+      new Date()
+    );
 
-    return response;
+    if (!updatedPackage) {
+      throw new Error(
+        "Package cannot be marked as in transit - it must be in ready_for_shipping status"
+      );
+    }
+
+    await repository.addShipmentHistory(
+      sql,
+      updatedPackage.id,
+      userId,
+      "Picked Up",
+      updatedPackage.destination_address,
+      "Picked up by carrier"
+    );
+    await repository.addShipmentHistory(
+      sql,
+      updatedPackage.id,
+      userId,
+      "In Transit",
+      updatedPackage.destination_address,
+      "Package is in transit"
+    );
+
+    return updatedPackage;
   });
 };
 
 export const setPackageDelivered = async (
   trackingNumber: string,
-  userId: number
+  userId: number,
+  repository: IPackagesRepository = defaultRepository
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
-    const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'delivered', delivered_at = NOW() WHERE tracking_number = ${trackingNumber} AND status = 'in_transit'
-      RETURNING *
+    const [pkg]: Package[] = await sql`
+      SELECT * FROM packages WHERE tracking_number = ${trackingNumber} FOR UPDATE
     `;
 
-    if (!response) {
+    if (!pkg) {
       throw new Error("Package not found");
     }
 
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'Delivered', ${response.destination_address}, 'Successfully delivered to recipient', NOW())
-    `;
+    const updatedPackage = await repository.updatePackageStatus(
+      sql,
+      pkg.id,
+      "in_transit",
+      "delivered",
+      undefined,
+      new Date()
+    );
 
-    return response;
+    if (!updatedPackage) {
+      throw new Error(
+        "Package cannot be marked as delivered - it must be in in_transit status"
+      );
+    }
+
+    await repository.addShipmentHistory(
+      sql,
+      updatedPackage.id,
+      userId,
+      "Delivered",
+      updatedPackage.destination_address,
+      "Successfully delivered to recipient"
+    );
+
+    return updatedPackage;
   });
 };
 
 export const setPackageReturnedToWarehouse = async (
   trackingNumber: string,
-  userId: number
+  userId: number,
+  repository: IPackagesRepository = defaultRepository
 ): Promise<Package> => {
   return await pgsql.begin(async (sql) => {
-    const [response]: Package[] = await sql`
-      UPDATE packages SET status = 'ready_for_shipping' WHERE tracking_number = ${trackingNumber} AND status = 'in_transit'
-      RETURNING *
+    const [pkg]: Package[] = await sql`
+      SELECT * FROM packages WHERE tracking_number = ${trackingNumber} FOR UPDATE
     `;
 
-    if (!response) {
+    if (!pkg) {
       throw new Error("Package not found");
     }
 
-    await sql`
-      INSERT INTO shipment_history (package_id, user_id, status, location, notes, event_timestamp) 
-      VALUES (${response.id}, ${userId}, 'Returned to Warehouse', ${response.destination_address}, 'Package returned to warehouse', NOW())
-    `;
+    const updatedPackage = await repository.updatePackageStatus(
+      sql,
+      pkg.id,
+      "in_transit",
+      "ready_for_shipping"
+    );
 
-    return response;
+    if (!updatedPackage) {
+      throw new Error(
+        "Package cannot be returned to warehouse - it must be in in_transit status"
+      );
+    }
+
+    await repository.addShipmentHistory(
+      sql,
+      updatedPackage.id,
+      userId,
+      "Returned to Warehouse",
+      updatedPackage.destination_address,
+      "Package returned to warehouse"
+    );
+
+    return updatedPackage;
   });
 };
